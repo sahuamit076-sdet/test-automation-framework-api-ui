@@ -1,0 +1,17 @@
+[
+  {
+    "name": "Java.lang.NullPointerException",
+    "messageRegex": ".*NullPointerException.*",
+    "matchedStatuses": ["failed", "skipped", "broken"]
+  },
+  {
+    "name": "Expected [supercard",
+    "messageRegex": ".*expected \\[supercard.*",
+    "matchedStatuses": ["failed", "skipped", "broken"]
+  },
+  {
+    "name": "Response code mismatch",
+    "messageRegex": ".*response code mismatch.*",
+    "matchedStatuses": ["failed", "skipped", "broken"]
+  }
+]

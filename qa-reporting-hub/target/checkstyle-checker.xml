@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE module PUBLIC
+        "-//Puppy Crawl//DTD Check Configuration 1.3//EN"
+        "http://www.puppycrawl.com/dtds/configuration_1_3.dtd">
+
+<module name="Checker">
+
+    <!-- ===================== -->
+    <!-- File-level checks      -->
+    <!-- ===================== -->
+    <module name="FileTabCharacter"/>
+
+    <!-- ===================== -->
+    <!-- TreeWalker checks       -->
+    <!-- ===================== -->
+    <module name="TreeWalker">
+
+        <!-- Import checks -->
+        <module name="UnusedImports"/>
+
+        <!-- Naming conventions -->
+        <module name="PackageName">
+            <property name="format" value="^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)*$"/>
+        </module>
+        <module name="TypeName">
+            <property name="format" value="^[A-Z][a-zA-Z0-9]*$"/>
+        </module>
+        <module name="MethodName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+        </module>
+<!--        <module name="ConstantName">-->
+<!--            <property name="format" value="^[A-Z][A-Z0-9_]*$"/>-->
+<!--        </module>-->
+<!--        <module name="LocalVariableName">-->
+<!--            <property name="format" value="^[a-z][a-zA-Z0-9]*(_[a-z0-9]+)*$"/>-->
+<!--        </module>-->
+
+    </module> <!-- end TreeWalker -->
+
+    <!-- Disallow System.out.println -->
+    <module name="RegexpSingleline">
+        <property name="format" value="System\.out\.println"/>
+        <property name="message" value="Avoid using System.out.println; use a logger instead."/>
+        <property name="ignoreCase" value="true"/>
+    </module>
+
+</module>

@@ -1,0 +1,57 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                              https://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+    <!-- Redirect all Maven requests through Artifactory -->
+    <mirrors>
+        <mirror>
+            <id>artifactory</id>
+            <name>Artifactory Mirror</name>
+            <url>https://artifactory.internal.ciaas.zetaapps.in/artifactory/maven-all</url>
+            <mirrorOf>*,!central</mirrorOf>
+        </mirror>
+        <!-- Explicitly allow Central -->
+        <mirror>
+            <id>central</id>
+            <name>Maven Central</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+            <mirrorOf>central</mirrorOf>
+        </mirror>
+    </mirrors>
+
+    <!-- Optional: define release and snapshot repos -->
+    <profiles>
+        <profile>
+            <id>artifactory</id>
+            <repositories>
+                <repository>
+                    <id>zeta-libs-release</id>
+                    <url>https://artifactory.internal.ciaas.zetaapps.in/artifactory/zeta-libs-release</url>
+                    <releases>
+                        <enabled>true</enabled>
+                        <updatePolicy>daily</updatePolicy>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                </repository>
+                <repository>
+                    <id>zeta-libs-snapshot</id>
+                    <url>https://artifactory.internal.ciaas.zetaapps.in/artifactory/zeta-libs-snapshot</url>
+                    <releases>
+                        <enabled>false</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                        <updatePolicy>always</updatePolicy>
+                    </snapshots>
+                </repository>
+            </repositories>
+        </profile>
+    </profiles>
+
+    <activeProfiles>
+        <activeProfile>artifactory</activeProfile>
+    </activeProfiles>
+</settings>

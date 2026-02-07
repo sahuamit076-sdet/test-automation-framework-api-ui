@@ -1,0 +1,15 @@
+{
+  "itp-uat": {
+    "user": "devops",
+    "password": "113282f8ad44c1c6b69068c2268e6e3326",
+    "host": "https://jenkins.uat-hdfclz.zetaapps.in",
+    "path": "CURL_EXECUTOR",
+    "job_token": "ITP_CURL"
+  },
+  "itp-showroom": {
+    "user": "chandug@zeta.tech",
+    "password": "114343a5f3dd43c9af7e87a11a489f987d",
+    "host": "https://jenkins.internal.mum1-pp.zetaapps.in",
+    "path": ""
+  }
+}

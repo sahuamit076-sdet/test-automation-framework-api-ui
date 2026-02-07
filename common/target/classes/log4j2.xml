@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO">
+    <Appenders>
+        <!-- Routing FileAppender (per-scenario logs) -->
+        <Routing name="FileAppender">
+            <Routes pattern="$${ctx:threadName}">
+                <Route>
+                    <File fileName="logs/${ctx:threadName}.log"
+                          name="appender-${ctx:threadName}"
+                          append="false">
+                        <PatternLayout>
+                            <!-- include logger name for debugging -->
+                            <Pattern>%date{ISO8601} %-5level [%logger] %C{1} : %m%n</Pattern>
+                        </PatternLayout>
+                    </File>
+                </Route>
+            </Routes>
+        </Routing>
+
+        <!-- Console appender -->
+        <Console name="STDOUT" target="SYSTEM_OUT">
+            <PatternLayout pattern="%date{ISO8601} %-5level %C{1} : %m%n"/>
+        </Console>
+
+        <!-- JSON RollingFile appender (shared central log) -->
+        <RollingFile name="JsonFile"
+                     fileName="logs/app-json.log"
+                     filePattern="logs/app-json-%d{yyyy-MM-dd}.log.gz">
+            <PatternLayout pattern="%date{ISO8601} %-5level %C{1} : %m%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <!-- Suppress FreeMarker and Allure debug logs -->
+        <Logger name="freemarker" level="WARN" additivity="false"/>
+        <Logger name="freemarker.cache" level="WARN" additivity="false"/>
+        <Logger name="freemarker.template" level="WARN" additivity="false"/>
+        <Logger name="freemarker.runtime" level="WARN" additivity="false"/>
+        <Logger name="freemarker.log" level="WARN" additivity="false"/>
+        <Logger name="org.freemarker" level="WARN" additivity="false"/>
+
+        <Logger name="io.qameta.allure.attachment" level="WARN" additivity="false"/>
+        <Logger name="io.qameta.allure.attachment.http" level="WARN" additivity="false"/>
+
+        <Logger name="itp-qa" level="INFO" additivity="false">
+            <AppenderRef ref="STDOUT"/>
+            <AppenderRef ref="FileAppender"/>
+        </Logger>
+
+        <!-- Root logger (catch-all) -->
+        <Root level="INFO">
+            <AppenderRef ref="FileAppender"/>
+            <AppenderRef ref="STDOUT"/>
+        </Root>
+    </Loggers>
+</Configuration>

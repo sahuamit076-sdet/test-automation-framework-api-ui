@@ -1,0 +1,19 @@
+subscription:
+  VISA:
+    - name: "VISA REGRESSION"
+      job: "TP_VISA_HDFCWORLD_REGRESSION"
+      environment: "SHOWROOM (600341)"
+  RUPAY:
+    - name: "RUPAY REGRESSION"
+      job: "TP_RUPAY_HDFCWORLD_REGRESSION"
+      environment: "SHOWROOM (600341)"
+  UPI:
+    - name: "UPI PSP REGRESSION"
+      job: "TP_UAT_REGRESSION_UPI_PSP"
+      environment: "UAT (1000001)"
+    - name: "UPI ISSUER REGRESSION"
+      job: "TP_HDFCWORLD_REGRESSION_UPI_ISSUER"
+      environment: "SHOWROOM (600341)"
+    - name: "UPI RECON REGRESSION"
+      job: "TP_HDFCWORLD_REGRESSION_UPI_RECON"
+      environment: "SHOWROOM (600341)"

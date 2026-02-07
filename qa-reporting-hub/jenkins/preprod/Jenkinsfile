@@ -1,0 +1,99 @@
+podTemplate(yaml: """
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app.kubernetes.io/name: vault
+  annotations:
+    vault.security.banzaicloud.io/vault-addr: "https://vault.zone-vault:8200"
+    vault.security.banzaicloud.io/vault-skip-verify: "true"
+    vault.security.banzaicloud.io/vault-role: "cluster-service"
+spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    privileged: false
+  containers:
+  - name: build
+    image: 813361731051.dkr.ecr.ap-south-1.amazonaws.com/dockerhub:maven-3.8.2-eclipse-temurin-17
+    command: ["bash"]
+    tty: true
+    volumeMounts:
+    - name: settings-xml-vol
+      mountPath: /usr/share/maven/conf/settings.xml
+      subPath: settings.xml
+    - name: cache-vol
+      mountPath: /home/jenkins/.m2/repository
+    resources:
+      requests:
+        cpu: "8000m"
+        memory: 16Gi
+        ephemeral-storage: "16Gi"
+      limits:
+        cpu: "8000m"
+        memory: 16Gi
+        ephemeral-storage: "16Gi"
+  volumes:
+  - name: config-vol
+    configMap:
+      name: docker-config
+  - name: settings-xml-vol
+    configMap:
+      name: settings-xml-config
+  - name: cache-vol
+    persistentVolumeClaim:
+      claimName: maven-cache
+"""
+) {
+  node(POD_LABEL) {
+    def helpers
+
+    stage('Checkout') {
+      try {
+        container('build') {
+          checkout([$class: 'GitSCM',
+            branches: [[name: "${params.Branch}"]],
+            userRemoteConfigs: [[credentialsId: "bitbucket", url: "git@bitbucket.org:zetaengg/itp-automation.git"]],
+            extensions: [[$class: 'CloneOption', shallow: true, noTags: true, depth: 1]]
+          ])
+          sh 'ls -l ${WORKSPACE}'
+          helpers = load("${WORKSPACE}/common/src/main/resources/jenkins/helpers.groovy")
+        }
+      } catch (Exception e) {
+        echo "Checkout stage failed: ${e}"
+      }
+    }
+
+    stage('Build & Test') {
+      try {
+        container('build') {
+          sh(helpers.buildTestCommandWithTestSkip("${WORKSPACE}", "qa-reporting-hub", params, false))
+        }
+      } catch (Exception e) {
+        echo "Test stage failed: ${e}"
+      }
+    }
+
+    stage('Archive Reports') {
+          try {
+            archiveArtifacts artifacts: 'qa-reporting-hub/email-summary.json, qa-reporting-hub/email_summary_report.html', fingerprint: true
+            allure includeProperties: false, jdk: '', results: [[path: 'qa-reporting-hub/allure-results']]
+          } catch (Exception e) {
+            echo "Archive Reports stage failed: ${e}"
+          }
+     }
+
+    stage('Send Email') {
+      try {
+        container('build') {
+          def htmlFile = "${WORKSPACE}/qa-reporting-hub/email_summary_report.html"
+          sh "echo ${params.MAIL_RECIPIENTS}"
+          sh(helpers.sendHtmlEmail(this, htmlFile, "TaPS", params.MAIL_RECIPIENTS))
+        }
+      } catch (Exception e) {
+        echo "Send Email stage failed: ${e}"
+      }
+    }
+
+  }
+}

@@ -1,0 +1,11 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd" >
+
+<suite name="Email Summary Generator" verbose="5" configfailurepolicy="continue">
+    <test name="Email Summary Generator" parallel="classes" thread-count="9">
+        <classes>
+            <class name="in.zeta.qa.email.TestClass1"/>
+            <class name="in.zeta.qa.email.TestClass2"/>
+            <class name="in.zeta.qa.email.TestClass3"/>
+        </classes>
+    </test>
+</suite>
