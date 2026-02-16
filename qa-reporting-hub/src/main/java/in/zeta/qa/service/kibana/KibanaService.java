@@ -7,7 +7,7 @@ import in.zeta.qa.constants.FilePath;
 import in.zeta.qa.entity.kibana.KibanaResponse;
 import in.zeta.qa.utils.fileUtils.PropertyFileReader;
 import in.zeta.qa.utils.misc.JsonHelper;
-import io.restassured.response.Response;
+import in.zeta.qa.utils.rest.ApiResponse;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
@@ -33,10 +33,10 @@ public class KibanaService implements FilePath {
     @SneakyThrows
     public String getKibanaUrlForErrorLogs(List<String> clusters, long fromEpochTime, long toEpochTime) {
         String longUrlPath = buildKibanaUrlForErrorLogs(clusters, fromEpochTime, toEpochTime);
-        Response response = kibanaClient.shortUrl(longUrlPath);
+        ApiResponse response = kibanaClient.shortUrl(longUrlPath);
         String server = PropertyFileReader.getPropertyValue("kibana.server.url");
-        if (response.statusCode() == HttpStatus.SC_OK) {
-            JsonNode jsonNode = jsonHelper.convertToJsonNode(response.body().asString());
+        if (response.getStatusCode() == HttpStatus.SC_OK) {
+            JsonNode jsonNode = jsonHelper.convertToJsonNode(response.getBody());
             String uuid = jsonNode.get("urlId").textValue();
             return server + "/_dashboards/goto/" + uuid + "?security_tenant=global";
         }
@@ -131,7 +131,7 @@ public class KibanaService implements FilePath {
     //TODO(amit): use this for fetching stacktrace of error
     public void searchErrorLogs(List<String> apps, long fromEpochTime, long toEpochTime) {
         String payload = constructPayloadForErrorLogs(apps, fromEpochTime, toEpochTime);
-        Response response = kibanaClient.openSearch(payload);
+        ApiResponse response = kibanaClient.openSearch(payload);
     }
 
     public Predicate<KibanaResponse.HitItem> getMatchingRrnAndTitlePredicate(String rrn, String title) {
@@ -166,8 +166,8 @@ public class KibanaService implements FilePath {
     public List<KibanaResponse.HitItem> searchMatchingHitsByRrn(long fromEpochTime, long toEpochTime, String rrn,
                                                                 Map<String, String> matchPhraseMap) {
         String payload = constructPayloadUsingMatchPhrase(fromEpochTime, toEpochTime, matchPhraseMap);
-        Response response = kibanaClient.openSearch(payload);
-        KibanaResponse kibanaResponse = jsonHelper.getObjectFromString(response.body().asString(), KibanaResponse.class);
+        ApiResponse response = kibanaClient.openSearch(payload);
+        KibanaResponse kibanaResponse = jsonHelper.getObjectFromString(response.getBody(), KibanaResponse.class);
         Predicate<KibanaResponse.HitItem> predicate = getMatchingRrnPredicate(rrn);
         return getLogMessages(kibanaResponse).stream().filter(predicate).collect(Collectors.toList());
     }
@@ -178,8 +178,8 @@ public class KibanaService implements FilePath {
     public List<KibanaResponse.HitItem> searchMatchingHitsByRrnAndTitle(long fromEpochTime, long toEpochTime, String rrn,
                                                                         String title, Map<String, String> matchPhraseMap) {
         String payload = constructPayloadUsingMatchPhrase(fromEpochTime, toEpochTime, matchPhraseMap);
-        Response response = kibanaClient.openSearch(payload);
-        KibanaResponse kibanaResponse = jsonHelper.getObjectFromString(response.body().asString(), KibanaResponse.class);
+        ApiResponse response = kibanaClient.openSearch(payload);
+        KibanaResponse kibanaResponse = jsonHelper.getObjectFromString(response.getBody(), KibanaResponse.class);
         Predicate<KibanaResponse.HitItem> predicate = getMatchingRrnAndTitlePredicate(rrn, title);
         return getLogMessages(kibanaResponse).stream().filter(predicate).collect(Collectors.toList());
     }
@@ -189,8 +189,8 @@ public class KibanaService implements FilePath {
      */
     public List<KibanaResponse.HitItem> searchLogsWithMatchPhrase(long fromEpochTime, long toEpochTime, Map<String, String> matchPhraseMap) {
         String payload = constructPayloadUsingMatchPhrase(fromEpochTime, toEpochTime, matchPhraseMap);
-        Response response = kibanaClient.openSearch(payload);
-        KibanaResponse kibanaResponse = jsonHelper.getObjectFromString(response.body().asString(), KibanaResponse.class);
+        ApiResponse response = kibanaClient.openSearch(payload);
+        KibanaResponse kibanaResponse = jsonHelper.getObjectFromString(response.getBody(), KibanaResponse.class);
         return getLogMessages(kibanaResponse);
     }
 
@@ -200,8 +200,8 @@ public class KibanaService implements FilePath {
     public List<KibanaResponse.HitItem> searchLogsWithMatchPhraseUntilMatchingStrFound(long fromEpochTime, long toEpochTime,
                                                                                        String matchStr, Map<String, String> matchPhraseMap) {
         String payload = constructPayloadUsingMatchPhrase(fromEpochTime, toEpochTime, matchPhraseMap);
-        Response response = kibanaClient.openSearchWithRetryUntilMatchedStrFound(payload, matchStr);
-        KibanaResponse kibanaResponse = jsonHelper.getObjectFromString(response.body().asString(), KibanaResponse.class);
+        ApiResponse response = kibanaClient.openSearchWithRetryUntilMatchedStrFound(payload, matchStr);
+        KibanaResponse kibanaResponse = jsonHelper.getObjectFromString(response.getBody(), KibanaResponse.class);
         return getLogMessages(kibanaResponse);
     }
 }

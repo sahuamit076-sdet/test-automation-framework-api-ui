@@ -5,13 +5,13 @@ import in.zeta.qa.utils.exceptions.*;
 import in.zeta.qa.constants.anotation.RetryOnFailure;
 import in.zeta.qa.constants.anotation.Retryable;
 import in.zeta.qa.utils.fileUtils.PropertyFileReader;
+import in.zeta.qa.utils.rest.ApiResponse;
 import io.restassured.response.Response;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpStatus;
 import org.apache.http.NoHttpResponseException;
 
 import java.net.ConnectException;
@@ -43,7 +43,7 @@ public class RetryUtils {
 
 
     @SneakyThrows
-    public Response executeWithRetry(Retryable<Response> action) {
+    public ApiResponse executeWithRetry(Retryable<ApiResponse> action) {
         // Get the calling method dynamically from the stack trace
         RetryOnFailure retry = getCallingMethodRetryAnnotation();
         // Check if the method has the @RetryOnFailure annotation
@@ -57,7 +57,7 @@ public class RetryUtils {
     }
 
     @SneakyThrows
-    public Response executeWithRetryUntilMatchStrNotFound(Retryable<Response> action, String matchingStr) {
+    public ApiResponse executeWithRetryUntilMatchStrNotFound(Retryable<ApiResponse> action, String matchingStr) {
         // Get the calling method dynamically from the stack trace
         RetryOnFailure retry = getCallingMethodRetryAnnotation();
         // Check if the method has the @RetryOnFailure annotation
@@ -102,14 +102,14 @@ public class RetryUtils {
 
     private RetryPolicy<Object> getRetryPolicyForErrorResponse(int delayInSeconds, int maxRetries, int[] statusCodes) {
         return getDefaultRetryPolicy(delayInSeconds, maxRetries)
-                .handleResultIf(response -> isExpectedResponse((Response) response, statusCodes)).handle(TachyonTestException.class);
+                .handleResultIf(response -> isExpectedResponse((ApiResponse) response, statusCodes)).handle(TachyonTestException.class);
     }
 
-    private boolean isExpectedResponse(Response response, int[] statusCodes) {
+    private boolean isExpectedResponse(ApiResponse response, int[] statusCodes) {
         if(statusCodes.length == 1 && statusCodes[0] == 0) {
-            return  response.statusCode() < HttpStatus.SC_OK && response.statusCode() >= HttpStatus.SC_INTERNAL_SERVER_ERROR;
+            return  response.getStatusCode() < 100 && response.getStatusCode() >= 500;
         }
-        return IntStream.of(statusCodes).anyMatch(code -> code == response.statusCode());
+        return IntStream.of(statusCodes).anyMatch(code -> code == response.getStatusCode());
     }
 
     private RetryPolicy<Object> getRetryPolicyForMatchingStrNotFound(int delayInSeconds, int maxRetries, String title) {

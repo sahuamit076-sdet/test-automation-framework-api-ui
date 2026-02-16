@@ -1,4 +1,4 @@
-package in.zeta.qa.utils.rest;
+package in.zeta.qa.utils.rest.rest_assured;
 
 import io.restassured.filter.FilterContext;
 import io.restassured.filter.OrderedFilter;

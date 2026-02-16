@@ -2,9 +2,7 @@ package in.zeta.qa.utils.rest;
 
 
 import in.zeta.qa.constants.endpoints.ApiEndpoint;
-import io.restassured.http.Headers;
-import io.restassured.http.Method;
-import io.restassured.response.Response;
+import in.zeta.qa.utils.misc.JsonHelper;
 import lombok.Builder;
 import lombok.Value;
 
@@ -15,6 +13,9 @@ import java.util.Map;
 @Builder(builderClassName = "ApiRequestBuilder", toBuilder = true)
 @Value
 public class ApiRequest<T> {
+
+    ClientType client = ClientType.REST_ASSURED;   // 👈 NEW FIELD
+
     //URL and Path
     // Full URL (if you want to override serverURL + endpoint + pathParams)
     String serverURL; // BASE url OR HOST
@@ -22,8 +23,8 @@ public class ApiRequest<T> {
     Map<String, Object> pathParams; // Path parameters to replace in endpoint
 
     // HTTP Method & Headers
-    Method method;
-    Headers headers;
+    HttpMethod method;
+    Map<String, String> headers;
     // Query parameters
     Map<String, Object> queryParams;
     // Body can be String (JSON, XML), POJO, Map etc.
@@ -36,23 +37,22 @@ public class ApiRequest<T> {
     List<File> files;
 
     public static class ApiRequestBuilder<T> {
-        public Response execute() {
+        public ApiResponse execute() {
             return this.build().execute();
         }
-
         public <R> R execute(Class<R> responseClass) {
             return this.build().execute(responseClass);
         }
     }
 
 
-    public Response execute() {
-        return RestFactory.getClient().execute(this);
+    public ApiResponse execute() {
+        return client.getService().execute(this);
     }
 
     public <R> R execute(Class<R> responseClass) {
-        Response response = execute();
-        return response.as(responseClass);
+        ApiResponse response = execute();
+        return new JsonHelper().getObjectFromString(response.getBody(), responseClass);
     }
 
 }

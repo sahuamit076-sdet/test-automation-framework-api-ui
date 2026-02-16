@@ -17,6 +17,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import in.zeta.qa.constants.CommonConstants;
 import in.zeta.qa.utils.customdeserializer.CustomIgnoreDeserializer;
 import in.zeta.qa.utils.fileUtils.FileReadHelper;
+import in.zeta.qa.utils.rest.ApiResponse;
 import io.restassured.response.Response;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
@@ -131,8 +132,8 @@ public class JsonHelper implements CommonConstants {
     }
 
     @SneakyThrows
-    public JsonNode convertToJsonNode(Response response) {
-        return getMapper().readTree(response.body().asString());
+    public JsonNode convertToJsonNode(ApiResponse response) {
+        return getMapper().readTree(response.getBody());
     }
 
     @SneakyThrows

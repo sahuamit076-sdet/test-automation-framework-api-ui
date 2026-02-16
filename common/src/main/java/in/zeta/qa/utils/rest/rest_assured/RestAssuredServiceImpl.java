@@ -1,29 +1,33 @@
-package in.zeta.qa.utils.rest;
+package in.zeta.qa.utils.rest.rest_assured;
 
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import in.zeta.qa.constants.endpoints.ApiEndpoint;
 import in.zeta.qa.utils.fileUtils.XmlUtils;
 import in.zeta.qa.utils.misc.JsonHelper;
+import in.zeta.qa.utils.rest.ApiRequest;
+import in.zeta.qa.utils.rest.ApiResponse;
+import in.zeta.qa.utils.rest.HttpClientService;
 import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.RestAssured;
 import io.restassured.config.ObjectMapperConfig;
 import io.restassured.config.RestAssuredConfig;
 import io.restassured.http.ContentType;
+import io.restassured.http.Header;
 import io.restassured.http.Method;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.NoHttpResponseException;
 
 
 @Slf4j
-class RestClientServiceImpl implements HttpClientService {
+public class RestAssuredServiceImpl implements HttpClientService {
 
     JsonHelper jsonHelper = new JsonHelper();
     XmlUtils xmlUtils = new XmlUtils();
@@ -56,33 +60,6 @@ class RestClientServiceImpl implements HttpClientService {
 
 
     // ---------------------
-    // URL
-    // ---------------------
-
-    private String buildUrl(ApiRequest<?> restRequest) {
-        String resolved = Optional.ofNullable(restRequest.getEndpoint())
-                .map(ApiEndpoint::getPath)
-                .orElse("");
-
-        if (Objects.nonNull(restRequest.getPathParams())) {
-            for (var entry : restRequest.getPathParams().entrySet()) {
-                resolved = resolved.replace("{" + entry.getKey() + "}", String.valueOf(entry.getValue()));
-            }
-        }
-
-        return restRequest.getServerURL() + resolved;
-    }
-
-
-    // ---------------------
-    // Headers
-    // ---------------------
-    private void applyHeaders(RequestSpecification request, ApiRequest<?> restRequest) {
-        Optional.ofNullable(restRequest.getHeaders())
-                .ifPresent(request::headers);
-    }
-
-    // ---------------------
     // Authentication
     // ---------------------
     private void applyAuthentication(RequestSpecification request, ApiRequest<?> restRequest) {
@@ -91,14 +68,6 @@ class RestClientServiceImpl implements HttpClientService {
         }
     }
 
-
-    // ---------------------
-    // Query parameters
-    // ---------------------
-    private void applyQueryParams(RequestSpecification request, ApiRequest<?> restRequest) {
-        Optional.ofNullable(restRequest.getQueryParams())
-                .ifPresent(request::queryParams);
-    }
 
     // ---------------------
     // Form parameters
@@ -141,9 +110,13 @@ class RestClientServiceImpl implements HttpClientService {
     }
 
     private ContentType determineContentType(ApiRequest<?> restRequest) {
-        return Optional.ofNullable(restRequest.getHeaders())
-                .map(headers -> headers.getValue("Content-Type"))
-                .map(String::toLowerCase).filter(header -> header.contains("xml")).map(header -> ContentType.XML).orElse(ContentType.JSON);
+        if (restRequest.getHeaders() != null) {
+            String contentType = restRequest.getHeaders().get("Content-Type");
+            if (contentType != null && contentType.toLowerCase().contains("xml")) {
+                return ContentType.XML;
+            }
+        }
+        return ContentType.JSON; // default
     }
 
     // ---------------------
@@ -158,11 +131,21 @@ class RestClientServiceImpl implements HttpClientService {
                 });
     }
 
+    private ApiResponse toApiResponse(Response response) {
+        return ApiResponse.builder()
+                .statusCode(response.getStatusCode())
+                .headers(response.getHeaders().asList().stream()
+                        .collect(Collectors.groupingBy(
+                                Header::getName, Collectors.mapping(Header::getValue, Collectors.toList())
+                        )))
+                .body(response.getBody().asString())
+                .build();
+    }
+
     //============================================================================================
-    // Convenience methods for common HTTP methods
 
     @Override
-    public Response execute(ApiRequest<?> restRequest) {
+    public ApiResponse execute(ApiRequest<?> restRequest) {
         String url = buildUrl(restRequest);
 
         RequestSpecification request = RestAssured.given()
@@ -170,31 +153,35 @@ class RestClientServiceImpl implements HttpClientService {
                 .relaxedHTTPSValidation().filter(new CurlLoggingFilter())
                 .filter(new AllureRestAssured().setRequestAttachmentName(url));
 
-        applyHeaders(request, restRequest);
+        Optional.ofNullable(restRequest.getHeaders()).ifPresent(request::headers);
+        Optional.ofNullable(restRequest.getQueryParams()).ifPresent(request::queryParams);
+
         applyAuthentication(request, restRequest);
-        applyQueryParams(request, restRequest);
+
+
         applyFormParams(request, restRequest);
         applyBody(request, restRequest);
         applyFiles(request, restRequest);
 
+        Response response = null;
         try {
-            return executeRequest(request, url, restRequest.getMethod());
+            response = executeRequest(request, url, Method.valueOf(restRequest.getMethod().name()));
         } catch (Exception e) {
             if (containsNoHttpResponseException(e)) {
                 try {
-                    return executeRequest(request, url, restRequest.getMethod());
+                    response = executeRequest(request, url, Method.valueOf(restRequest.getMethod().name()));
                 } catch (Exception ex) {
                     log.error("Error executing request to URL: {}", url, ex);
                 }
             }
         }
 
-        return null;
+        return toApiResponse(response);
     }
 
     private boolean containsNoHttpResponseException(Throwable t) {
         while (t != null) {
-            if (t instanceof org.apache.http.NoHttpResponseException) {
+            if (t instanceof NoHttpResponseException) {
                 return true;
             }
             t = t.getCause();

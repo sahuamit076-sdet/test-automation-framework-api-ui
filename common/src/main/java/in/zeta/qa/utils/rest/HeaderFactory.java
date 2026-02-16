@@ -2,124 +2,122 @@ package in.zeta.qa.utils.rest;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import io.restassured.http.Header;
-import io.restassured.http.Headers;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class HeaderFactory {
 
-    // Cache for single Header objects
-    private static final Cache<String, Header> headerCache = Caffeine.newBuilder()
+    private HeaderFactory() {} // prevent instantiation
+
+    // ----------------------
+    // Caches
+    // ----------------------
+    private static final Cache<String, Map<String, String>> headersCache = Caffeine.newBuilder()
             .maximumSize(50)
             .expireAfterAccess(15, TimeUnit.MINUTES)
             .build();
 
-    // Cache for combined Headers objects
-    private static final Cache<String, Headers> headersCache = Caffeine.newBuilder()
+    private static final Cache<String, Map<String, String>> singleHeaderCache = Caffeine.newBuilder()
             .maximumSize(50)
             .expireAfterAccess(15, TimeUnit.MINUTES)
             .build();
-    // ----------------------
-    // Private helpers
-    // ----------------------
 
-    private static Header getOrCreateHeader(String key, String value) {
+    // ----------------------
+    // Private helper methods
+    // ----------------------
+    private static Map<String, String> getOrCreateHeader(String key, String value) {
         String cacheKey = key + "::" + value;
-        return headerCache.get(cacheKey, k -> new Header(key, value));
+        return singleHeaderCache.get(cacheKey, k -> Map.of(key, value));
     }
 
-    private static Headers getOrCreateHeaders(String cacheKey, Header... headers) {
-        return headersCache.get(cacheKey, k -> new Headers(headers));
+    @SafeVarargs
+    private static Map<String, String> getOrCreateHeaders(String cacheKey, Map<String, String>... headers) {
+        return headersCache.get(cacheKey, k -> {
+            Map<String, String> combined = new HashMap<>();
+            for (Map<String, String> h : headers) {
+                combined.putAll(h);
+            }
+            return Collections.unmodifiableMap(combined);
+        });
     }
-    // Static headers (private)
-    public static Header contentTypeJson() {
+
+
+    // ----------------------
+    // Static headers
+    // ----------------------
+    public static Map<String, String> contentTypeJson() {
         return getOrCreateHeader("Content-Type", "application/json");
     }
 
-    private static Header acceptJson() {
+    public static Map<String, String> acceptJson() {
         return getOrCreateHeader("Accept", "application/json");
     }
 
-    private static Header contentTypeXml() {
+    public static Map<String, String> contentTypeXml() {
         return getOrCreateHeader("Content-Type", "application/xml");
     }
 
-    private static Header contentTypeFormBody() {
+    public static Map<String, String> contentTypeFormBody() {
         return getOrCreateHeader("Content-Type", "application/x-www-form-urlencoded");
     }
 
-    // Dynamic headers (private)
-    private static Header userAgent(String agent) {
-        return getOrCreateHeader("User-Agent", agent);
-    }
-
-    public static Header authorization(String token) {
+    // ----------------------
+    // Dynamic headers
+    // ----------------------
+    public static Map<String, String> authorization(String token) {
         return getOrCreateHeader("Authorization", "Bearer " + token);
     }
 
-    private static Header zetaApiToken(String token) {
+    public static Map<String, String> zetaApiToken(String token) {
         return getOrCreateHeader("X-Zeta-AuthToken", token);
     }
 
-    private static Header apiKey(String apiKey) {
-        return getOrCreateHeader("apiKey", apiKey);
-    }
-
-    private static Header jwt(String token) {
+    public static Map<String, String> jwt(String token) {
         return getOrCreateHeader("X-Jwt-AuthToken", token);
     }
 
+    public static Map<String, String> userAgent(String agent) {
+        return getOrCreateHeader("User-Agent", agent);
+    }
+
+    public static Map<String, String> apiKey(String apiKey) {
+        return getOrCreateHeader("apiKey", apiKey);
+    }
+
     // ----------------------
-    // Public methods (always return Headers)
+    // Combined headers
     // ----------------------
-    public static Headers authorizationWithJsonContentType(String token) {
-        String cacheKey = "authorizationWithJsonContentType::" + token;
-        return getOrCreateHeaders(cacheKey, authorization(token), contentTypeJson());
+    public static Map<String, String> authorizationWithJson(String token) {
+        return getOrCreateHeaders("authorizationWithJson::" + token,
+                authorization(token),
+                contentTypeJson());
     }
 
-    public static Headers zetaApiTokenWithJsonContentType(String token) {
-        String cacheKey = "zetaApiTokenWithJsonContentType::" + token;
-        return getOrCreateHeaders(cacheKey, zetaApiToken(token), contentTypeJson());
+    public static Map<String, String> zetaApiTokenWithJson(String token) {
+        return getOrCreateHeaders("zetaApiTokenWithJson::" + token,
+                zetaApiToken(token),
+                contentTypeJson());
     }
 
-    public static Headers jwtWithJsonContentType(String token) {
-        String cacheKey = "jwtWithJsonContentType::" + token;
-        return getOrCreateHeaders(cacheKey, jwt(token), contentTypeJson());
+    public static Map<String, String> jwtWithJson(String token) {
+        return getOrCreateHeaders("jwtWithJson::" + token,
+                jwt(token),
+                contentTypeJson());
     }
 
-    public static Headers userAgentWithJsonContentType(String agent) {
-        String cacheKey = "userAgentWithJsonContentType::" + agent;
-        return getOrCreateHeaders(cacheKey, userAgent(agent), contentTypeJson());
+    public static Map<String, String> userAgentWithJson(String agent) {
+        return getOrCreateHeaders("userAgentWithJson::" + agent,
+                userAgent(agent),
+                contentTypeJson());
     }
 
-    public static Headers basicAuthWithFormUrlEncoded(String encoded) {
-        String cacheKey = "basicAuthWithFormUrlEncoded::" + encoded;
-        return getOrCreateHeaders(cacheKey, getOrCreateHeader("Authorization", "Basic " + encoded), contentTypeFormBody());
-    }
-
-    public static Headers contentTypeJsonHeader() {
-        String cacheKey = "contentTypeJson";
-        return getOrCreateHeaders(cacheKey, contentTypeJson());
-    }
-
-    public static Headers contentTypeXmlHeader() {
-        String cacheKey = "contentTypeXml";
-        return getOrCreateHeaders(cacheKey, contentTypeXml());
-    }
-
-    public static Headers zetaApiTokenHeader(String token) {
-        String cacheKey = "zetaApi::" + token;
-        return getOrCreateHeaders(cacheKey, zetaApiToken(token));
-    }
-
-    public static Headers authorizationHeader(String token) {
-        String cacheKey = "authorization::" + token;
-        return getOrCreateHeaders(cacheKey, authorization(token));
-    }
-
-    public static Headers apikeyTokenHeader(String token) {
-        String cacheKey = "apiKey::" + token;
-        return getOrCreateHeaders(cacheKey, apiKey(token));
+    public static Map<String, String> basicAuthWithFormBody(String encoded) {
+        Map<String, String> authHeader = getOrCreateHeader("Authorization", "Basic " + encoded);
+        return getOrCreateHeaders("basicAuthWithFormBody::" + encoded,
+                authHeader,
+                contentTypeFormBody());
     }
 }

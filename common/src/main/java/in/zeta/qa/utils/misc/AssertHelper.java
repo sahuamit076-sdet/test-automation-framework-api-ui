@@ -1,6 +1,7 @@
 package in.zeta.qa.utils.misc;
 
 import in.zeta.qa.constants.ErrorConstants;
+import in.zeta.qa.utils.rest.ApiResponse;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import lombok.AllArgsConstructor;
@@ -45,24 +46,24 @@ public class AssertHelper implements ErrorConstants {
 
 
     // Convenience method for 2xx
-    public static void is2xx(Response response) {
+    public static void is2xx(ApiResponse response) {
         assertStatusInRange(response, HttpStatusRange.SUCCESS, true);
     }
 
     // Convenience method for 4xx
-    public static void not4xx(Response response) {
+    public static void not4xx(ApiResponse response) {
         assertStatusInRange(response, HttpStatusRange.CLIENT_ERROR, false);
     }
 
     // Convenience method for 5xx
-    public static void not5xx(Response response) {
+    public static void not5xx(ApiResponse response) {
         assertStatusInRange(response, HttpStatusRange.SERVER_ERROR, false);
     }
 
-    public void validateStatusCode(Response response, int expected, String... message) {
+    public void validateStatusCode(ApiResponse response, int expected, String... message) {
         var msg = getFirstMessageOrDefault(message, ErrorConstants.API_RESPONSE_CODE_MISMATCH);
-        logComparison("HTTP Status", expected, response.statusCode());
-        Assert.assertEquals(response.statusCode(), expected, msg);
+        logComparison("HTTP Status", expected, response.getStatusCode());
+        Assert.assertEquals(response.getStatusCode(), expected, msg);
     }
 
     public void validateStatusCodeIn(Response response, int... expectedStatuses) {
@@ -125,8 +126,8 @@ public class AssertHelper implements ErrorConstants {
     /* ----------------------- Private Helpers ----------------------- */
 
     // Generic method: pass true for "in range", false for "not in range"
-    private static void assertStatusInRange(Response response, HttpStatusRange range, boolean shouldBeInRange) {
-        int status = response.statusCode();
+    private static void assertStatusInRange(ApiResponse response, HttpStatusRange range, boolean shouldBeInRange) {
+        int status = response.getStatusCode();
         boolean inRange = range.contains(status);
         if (shouldBeInRange) {
             Assert.assertTrue(inRange, "Expected status in range " + range + " but was " + status);

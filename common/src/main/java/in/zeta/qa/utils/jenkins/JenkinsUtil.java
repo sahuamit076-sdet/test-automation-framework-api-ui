@@ -8,8 +8,8 @@ import in.zeta.qa.utils.misc.CommonUtilities;
 import in.zeta.qa.utils.misc.JsonHelper;
 import in.zeta.qa.utils.misc.RetryUtils;
 import in.zeta.qa.utils.rest.ApiRequest;
-import io.restassured.http.Method;
-import io.restassured.response.Response;
+import in.zeta.qa.utils.rest.ApiResponse;
+import in.zeta.qa.utils.rest.HttpMethod;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpStatus;
@@ -58,7 +58,7 @@ public class JenkinsUtil {
         lock.lock();
         try {
             Map<String, Object> map = Collections.singletonMap("CURL", cURL);
-            Response response = jenkinsBuildWithParams(config, map);
+            ApiResponse response = jenkinsBuildWithParams(config, map);
             assertHelper.validateStatusCode(response, HttpStatus.SC_CREATED);
             CommonUtilities.waitInSeconds(3);
         } finally {
@@ -83,14 +83,14 @@ public class JenkinsUtil {
         ReentrantLock lock = LOCKS.computeIfAbsent(config.path(), k -> new ReentrantLock());
         lock.lock();
         try {
-            Response response = jenkinsJobInfo(config);
+            ApiResponse response = jenkinsJobInfo(config);
             assertHelper.validateStatusCode(response, HttpStatus.SC_OK);
 
             int buildId = jsonHelper.convertToJsonNode(response)
                     .path("lastSuccessfulBuild").path("number").asInt();
 
             response = jenkinsJobBuildConsoleText(config, buildId);
-            return Optional.ofNullable(response.body().asString());
+            return Optional.ofNullable(response.getBody());
         } finally {
             lock.unlock();
         }
@@ -115,12 +115,12 @@ public class JenkinsUtil {
 
     @SneakyThrows
     @RetryOnFailure(count = 2, delayInSeconds = 3, statusCodes = {502, 404})
-    private Response jenkinsBuildWithParams(JenkinsConfig config, Map<String, Object> formParams) {
+    private ApiResponse jenkinsBuildWithParams(JenkinsConfig config, Map<String, Object> formParams) {
         ApiRequest<Map<String, Object>> request = ApiRequest.<Map<String, Object>>builder()
                 .serverURL(config.host())
                 .endpoint(JenkinsEndpoints.BUILD_WITH_PARAM)
                 .pathParams(Map.of("PATH", config.path(), "TOKEN", config.jobToken()))
-                .method(Method.POST)
+                .method(HttpMethod.POST)
                 .username(config.user())
                 .password(config.password())
                 .formParams(formParams)
@@ -130,12 +130,12 @@ public class JenkinsUtil {
 
     @SneakyThrows
     @RetryOnFailure(count = 2, delayInSeconds = 5, statusCodes = {502})
-    private Response jenkinsJobInfo(JenkinsConfig config) {
+    private ApiResponse jenkinsJobInfo(JenkinsConfig config) {
         ApiRequest<Void> request = ApiRequest.<Void>builder()
                 .serverURL(config.host())
                 .endpoint(JenkinsEndpoints.GET_BUILD_INFO)
                 .pathParams(Map.of("PATH", config.path(), "TOKEN", config.jobToken()))
-                .method(Method.GET)
+                .method(HttpMethod.GET)
                 .username(config.user())
                 .password(config.password())
                 .build();
@@ -144,13 +144,13 @@ public class JenkinsUtil {
 
     @SneakyThrows
     @RetryOnFailure(count = 2, delayInSeconds = 5, statusCodes = {502})
-    private Response jenkinsJobBuildConsoleText(JenkinsConfig config, int jobId) {
+    private ApiResponse jenkinsJobBuildConsoleText(JenkinsConfig config, int jobId) {
         CommonUtilities.waitInSeconds(2);
         ApiRequest<Void> request = ApiRequest.<Void>builder()
                 .serverURL(config.host())
                 .endpoint(JenkinsEndpoints.GET_BUILD_CONSOLE_TEXT)
                 .pathParams(Map.of("PATH", config.path(), "JOB_ID", String.valueOf(jobId), "TOKEN", config.jobToken()))
-                .method(Method.GET)
+                .method(HttpMethod.GET)
                 .username(config.user())
                 .password(config.password())
                 .build();
@@ -159,14 +159,14 @@ public class JenkinsUtil {
 
     @SneakyThrows
     @RetryOnFailure(count = 2, delayInSeconds = 5, statusCodes = {502})
-    public Response jenkinsAllureSummary(String jobname, Integer buildId) {
+    public ApiResponse jenkinsAllureSummary(String jobname, Integer buildId) {
         JenkinsConfig config = getInstanceConfig("itp-showroom");
         CommonUtilities.waitInSeconds(2);
         ApiRequest<Void> request = ApiRequest.<Void>builder()
                 .serverURL(config.host())
                 .endpoint(JenkinsEndpoints.GET_ALLURE_REPORTS_BY_JOB_ID)
                 .pathParams(Map.of("JOB_NAME", jobname, "BUILD_ID", String.valueOf(buildId)))
-                .method(Method.GET)
+                .method(HttpMethod.GET)
                 .username(config.user())
                 .password(config.password())
                 .build();
@@ -175,14 +175,14 @@ public class JenkinsUtil {
 
     @SneakyThrows
     @RetryOnFailure(count = 2, delayInSeconds = 5, statusCodes = {502})
-    private Response getBuilds(String jobname) {
+    private ApiResponse getBuilds(String jobname) {
         JenkinsConfig config = getInstanceConfig("itp-showroom");
         CommonUtilities.waitInSeconds(2);
         ApiRequest<Void> request = ApiRequest.<Void>builder()
                 .serverURL(config.host())
                 .endpoint(JenkinsEndpoints.GET_BUILDS)
                 .pathParams(Map.of("JOB_NAME", jobname))
-                .method(Method.GET)
+                .method(HttpMethod.GET)
                 .username(config.user())
                 .password(config.password())
                 .build();
@@ -192,7 +192,7 @@ public class JenkinsUtil {
     //##########################################################################################
     //##########################################################################################
     public Map<String, BuildInfo> getTodayAndYesterdayBuilds(String jobname) {
-        Response response = getBuilds(jobname);
+        ApiResponse response = getBuilds(jobname);
         try {
             JsonNode root = jsonHelper.convertToJsonNode(response);
             JsonNode builds = root.get("builds");
