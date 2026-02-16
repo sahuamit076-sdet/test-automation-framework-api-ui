@@ -6,7 +6,6 @@ import in.zeta.qa.constants.endpoints.JenkinsEndpoints;
 import in.zeta.qa.utils.misc.AssertHelper;
 import in.zeta.qa.utils.misc.CommonUtilities;
 import in.zeta.qa.utils.misc.JsonHelper;
-import in.zeta.qa.utils.misc.RetryUtils;
 import in.zeta.qa.utils.rest.ApiRequest;
 import in.zeta.qa.utils.rest.ApiResponse;
 import in.zeta.qa.utils.rest.HttpMethod;
@@ -116,7 +115,7 @@ public class JenkinsUtil {
     @SneakyThrows
     @RetryOnFailure(count = 2, delayInSeconds = 3, statusCodes = {502, 404})
     private ApiResponse jenkinsBuildWithParams(JenkinsConfig config, Map<String, Object> formParams) {
-        ApiRequest<Map<String, Object>> request = ApiRequest.<Map<String, Object>>builder()
+        return ApiRequest.<Map<String, Object>>builder()
                 .serverURL(config.host())
                 .endpoint(JenkinsEndpoints.BUILD_WITH_PARAM)
                 .pathParams(Map.of("PATH", config.path(), "TOKEN", config.jobToken()))
@@ -124,37 +123,34 @@ public class JenkinsUtil {
                 .username(config.user())
                 .password(config.password())
                 .formParams(formParams)
-                .build();
-        return new RetryUtils().executeWithRetry(request::execute);
+                .build().execute();
     }
 
     @SneakyThrows
     @RetryOnFailure(count = 2, delayInSeconds = 5, statusCodes = {502})
     private ApiResponse jenkinsJobInfo(JenkinsConfig config) {
-        ApiRequest<Void> request = ApiRequest.<Void>builder()
+        return ApiRequest.<Void>builder()
                 .serverURL(config.host())
                 .endpoint(JenkinsEndpoints.GET_BUILD_INFO)
                 .pathParams(Map.of("PATH", config.path(), "TOKEN", config.jobToken()))
                 .method(HttpMethod.GET)
                 .username(config.user())
                 .password(config.password())
-                .build();
-        return new RetryUtils().executeWithRetry(request::execute);
+                .build().execute();
     }
 
     @SneakyThrows
     @RetryOnFailure(count = 2, delayInSeconds = 5, statusCodes = {502})
     private ApiResponse jenkinsJobBuildConsoleText(JenkinsConfig config, int jobId) {
         CommonUtilities.waitInSeconds(2);
-        ApiRequest<Void> request = ApiRequest.<Void>builder()
+        return ApiRequest.<Void>builder()
                 .serverURL(config.host())
                 .endpoint(JenkinsEndpoints.GET_BUILD_CONSOLE_TEXT)
                 .pathParams(Map.of("PATH", config.path(), "JOB_ID", String.valueOf(jobId), "TOKEN", config.jobToken()))
                 .method(HttpMethod.GET)
                 .username(config.user())
                 .password(config.password())
-                .build();
-        return new RetryUtils().executeWithRetry(request::execute);
+                .build().execute();
     }
 
     @SneakyThrows
@@ -162,15 +158,14 @@ public class JenkinsUtil {
     public ApiResponse jenkinsAllureSummary(String jobname, Integer buildId) {
         JenkinsConfig config = getInstanceConfig("itp-showroom");
         CommonUtilities.waitInSeconds(2);
-        ApiRequest<Void> request = ApiRequest.<Void>builder()
+        return ApiRequest.<Void>builder()
                 .serverURL(config.host())
                 .endpoint(JenkinsEndpoints.GET_ALLURE_REPORTS_BY_JOB_ID)
                 .pathParams(Map.of("JOB_NAME", jobname, "BUILD_ID", String.valueOf(buildId)))
                 .method(HttpMethod.GET)
                 .username(config.user())
                 .password(config.password())
-                .build();
-        return new RetryUtils().executeWithRetry(request::execute);
+                .build().execute();
     }
 
     @SneakyThrows
@@ -178,15 +173,14 @@ public class JenkinsUtil {
     private ApiResponse getBuilds(String jobname) {
         JenkinsConfig config = getInstanceConfig("itp-showroom");
         CommonUtilities.waitInSeconds(2);
-        ApiRequest<Void> request = ApiRequest.<Void>builder()
+        return ApiRequest.<Void>builder()
                 .serverURL(config.host())
                 .endpoint(JenkinsEndpoints.GET_BUILDS)
                 .pathParams(Map.of("JOB_NAME", jobname))
                 .method(HttpMethod.GET)
                 .username(config.user())
                 .password(config.password())
-                .build();
-        return new RetryUtils().executeWithRetry(request::execute);
+                .build().execute();
     }
 
     //##########################################################################################

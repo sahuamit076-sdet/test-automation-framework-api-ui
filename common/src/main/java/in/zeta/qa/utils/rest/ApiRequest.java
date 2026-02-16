@@ -3,6 +3,7 @@ package in.zeta.qa.utils.rest;
 
 import in.zeta.qa.constants.endpoints.ApiEndpoint;
 import in.zeta.qa.utils.misc.JsonHelper;
+import in.zeta.qa.utils.misc.RetryUtils;
 import lombok.Builder;
 import lombok.Value;
 
@@ -40,6 +41,7 @@ public class ApiRequest<T> {
         public ApiResponse execute() {
             return this.build().execute();
         }
+
         public <R> R execute(Class<R> responseClass) {
             return this.build().execute(responseClass);
         }
@@ -47,7 +49,7 @@ public class ApiRequest<T> {
 
 
     public ApiResponse execute() {
-        return client.getService().execute(this);
+        return new RetryUtils().executeWithRetry(() -> client.getService().execute(this));
     }
 
     public <R> R execute(Class<R> responseClass) {

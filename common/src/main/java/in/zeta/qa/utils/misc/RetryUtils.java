@@ -4,7 +4,6 @@ package in.zeta.qa.utils.misc;
 import in.zeta.qa.utils.exceptions.*;
 import in.zeta.qa.constants.anotation.RetryOnFailure;
 import in.zeta.qa.constants.anotation.Retryable;
-import in.zeta.qa.utils.fileUtils.PropertyFileReader;
 import in.zeta.qa.utils.rest.ApiResponse;
 import io.restassured.response.Response;
 import lombok.SneakyThrows;
@@ -19,10 +18,7 @@ import java.net.SocketException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.function.BooleanSupplier;
-import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 @Log4j2
@@ -40,36 +36,27 @@ public class RetryUtils {
     }
 
 
-
-
     @SneakyThrows
     public ApiResponse executeWithRetry(Retryable<ApiResponse> action) {
-        // Get the calling method dynamically from the stack trace
         RetryOnFailure retry = getCallingMethodRetryAnnotation();
-        // Check if the method has the @RetryOnFailure annotation
         if (Objects.isNull(retry)) {
             return action.execute();
         }
         log.error("Retrying API Call...");
-        // Use Failsafe to execute the action with the retry policy
-        // Retry if response status code is not 2xx
         return Failsafe.with(getRetryPolicyForErrorResponse(retry.delayInSeconds(), retry.count(), retry.statusCodes())).get(action::execute);
     }
 
     @SneakyThrows
     public ApiResponse executeWithRetryUntilMatchStrNotFound(Retryable<ApiResponse> action, String matchingStr) {
-        // Get the calling method dynamically from the stack trace
         RetryOnFailure retry = getCallingMethodRetryAnnotation();
-        // Check if the method has the @RetryOnFailure annotation
         if (Objects.isNull(retry)) {
             return action.execute();
         }
         log.error("Retrying API Call until match Str not found...");
-        // Use Failsafe to execute the action with the retry policy
         return Failsafe.with(getRetryPolicyForMatchingStrNotFound(retry.delayInSeconds(), retry.count(), matchingStr)).get(action::execute);
     }
 
-    private static RetryOnFailure getCallingMethodRetryAnnotation() {
+    public static RetryOnFailure getCallingMethodRetryAnnotation() {
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
         // 0 - getStackTrace
         // 1 - getCallingMethodRetryAnnotation
@@ -106,8 +93,8 @@ public class RetryUtils {
     }
 
     private boolean isExpectedResponse(ApiResponse response, int[] statusCodes) {
-        if(statusCodes.length == 1 && statusCodes[0] == 0) {
-            return  response.getStatusCode() < 100 && response.getStatusCode() >= 500;
+        if (statusCodes.length == 1 && statusCodes[0] == 0) {
+            return response.getStatusCode() < 100 && response.getStatusCode() >= 500;
         }
         return IntStream.of(statusCodes).anyMatch(code -> code == response.getStatusCode());
     }
@@ -118,53 +105,13 @@ public class RetryUtils {
     }
 
     private boolean isMatchingStringNotFound(Response response, String title) {
-        if (StringUtils.isEmpty(title) || Objects.isNull(response)){
+        if (StringUtils.isEmpty(title) || Objects.isNull(response)) {
             return false;
         }
         return !response.body().asString().contains(title);
     }
 
-    public static <T> Optional<T> executeWithRetryForMethod(Supplier<Optional<T>> task, int attempts, int delayInSeconds) {
-        for (int i = 1; i <= attempts; i++) {
-            try {
-                Optional<T> result = task.get();
-                if (result.isPresent()) {
-                    return result;
-                }
-                AllureLoggingUtils.logsToAllureReport("Attempt " + i + " returned empty, retrying...");
-            } catch (Exception e) {
-                AllureLoggingUtils.logsToAllureReport("Attempt " + i + " failed: " + e.getMessage());
-            }
 
-            if (i < attempts) {
-                CommonUtilities.waitInSeconds(delayInSeconds);
-            }
-        }
-        AllureLoggingUtils.logsToAllureReport("All " + attempts + " attempts failed. Returning empty.");
-        return Optional.empty();
-    }
 
-    @SneakyThrows
-    public static boolean retryUntilTrue(Integer retryCount, Integer waitInSecs, BooleanSupplier condition) {
-        int attempts = Optional.ofNullable(retryCount).orElse(3);
-        int waitTime;
-        try {
-            waitTime = Optional.ofNullable(waitInSecs).orElse(Integer.parseInt(PropertyFileReader.getPropertyValue("CMS_WAIT_TIME")));
-        } catch (Exception e) {
-            waitTime = 5;
-        }
-        while (attempts-- >= 0) {
-            try {
-                if (condition != null && condition.getAsBoolean()) {
-                    return true;
-                }
-            } catch (NullPointerException npe) {
-                log.error("NullPointerException while evaluating condition: " + npe);
-            } catch (Exception e) {
-                log.error("Unexpected exception during retry evaluation: " + e);
-            }
-            CommonUtilities.waitInSeconds(waitTime);
-        }
-        return false;
-    }
+
 }
