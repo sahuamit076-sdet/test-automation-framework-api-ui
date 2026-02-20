@@ -15,6 +15,7 @@ import java.util.Map;
 @Value
 public class ApiRequest<T> {
 
+    @Builder.Default
     ClientType client = ClientType.REST_ASSURED;   // 👈 NEW FIELD
 
     //URL and Path

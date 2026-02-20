@@ -157,8 +157,6 @@ public class RestAssuredServiceImpl implements HttpClientService {
         Optional.ofNullable(restRequest.getQueryParams()).ifPresent(request::queryParams);
 
         applyAuthentication(request, restRequest);
-
-
         applyFormParams(request, restRequest);
         applyBody(request, restRequest);
         applyFiles(request, restRequest);
