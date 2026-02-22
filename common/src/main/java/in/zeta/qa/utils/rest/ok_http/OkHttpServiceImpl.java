@@ -1,5 +1,6 @@
 package in.zeta.qa.utils.rest.ok_http;
 
+import in.zeta.qa.utils.cuncurrency.SingletonFactory;
 import in.zeta.qa.utils.misc.JsonHelper;
 import in.zeta.qa.utils.rest.ApiRequest;
 import in.zeta.qa.utils.rest.ApiResponse;
@@ -14,6 +15,12 @@ import java.util.List;
 import java.util.Map;
 
 public class OkHttpServiceImpl implements HttpClientService {
+
+    public OkHttpServiceImpl() {};
+
+    public static OkHttpServiceImpl getInstance() {
+        return SingletonFactory.getInstance(OkHttpServiceImpl.class);
+    }
 
     private static final OkHttpClient CLIENT = new OkHttpClient.Builder()
             .callTimeout(Duration.ofSeconds(60))
