@@ -1,9 +1,6 @@
 package in.zeta.qa.utils.misc;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -38,6 +35,7 @@ import java.util.function.Predicate;
 import java.util.stream.StreamSupport;
 
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class JsonHelper implements CommonConstants {
 
     private static final Logger LOG = LogManager.getLogger(JsonHelper.class);

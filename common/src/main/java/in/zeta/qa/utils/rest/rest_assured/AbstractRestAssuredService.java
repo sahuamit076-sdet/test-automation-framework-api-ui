@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.NoHttpResponseException;
 
-public abstract class AbstractRestAssuredService {
+public abstract class AbstractRestAssuredService implements HttpClientService {
 
     protected final JsonHelper jsonHelper = new JsonHelper();
     protected final XmlUtils xmlUtils = new XmlUtils();

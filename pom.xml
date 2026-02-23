@@ -12,7 +12,7 @@
         <module>common</module>
         <module>qa-reporting-hub</module>
         <module>ui</module>
-        <module>extracts-reports</module>
+        <module>api-test</module>
     </modules>
 
     <properties>

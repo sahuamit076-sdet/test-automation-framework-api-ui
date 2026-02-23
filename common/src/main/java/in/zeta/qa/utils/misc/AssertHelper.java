@@ -7,9 +7,6 @@ import io.restassured.response.Response;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.json.JSONObject;
-import org.skyscreamer.jsonassert.*;
-import org.skyscreamer.jsonassert.comparator.CustomComparator;
 import org.testng.Assert;
 import org.testng.asserts.SoftAssert;
 
@@ -86,21 +83,7 @@ public class AssertHelper implements ErrorConstants {
 
     /* ----------------------- JSON Assertions ----------------------- */
 
-    public void validateObject(SoftAssert softAssert, Object expected, Object actual, String message, String... fieldsToIgnore) {
-        logComparison("JSON", expected, actual);
 
-        var customIgnores = Arrays.stream(fieldsToIgnore)
-                .map(f -> new Customization(f, (o1, o2) -> true))
-                .toArray(Customization[]::new);
-
-        var result = JSONCompare.compareJSON(
-                new JSONObject(expected),
-                new JSONObject(actual),
-                new CustomComparator(JSONCompareMode.LENIENT, customIgnores)
-        );
-
-        softAssert.assertFalse(result.failed(), message + " - " + result.getMessage());
-    }
 
 
 

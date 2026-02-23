@@ -7,7 +7,7 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>extracts-reports</artifactId>
+    <artifactId>api-test</artifactId>
     <packaging>jar</packaging>
 
     <name>extracts-reports</name>
